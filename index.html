@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tic Tac Toe – Giacomo Leopardi</title>
+  <link rel="manifest" href="manifest.json">
+  <!-- Font Pixar-like -->
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root{
+      --sky:#d6ecff;
+      --sun:#ffe066;
+      --tomato:#ff6f61;
+      --leaf:#2ecc71;
+      --ocean:#1e90ff;
+      --ink:#222;
+      --muted:#616161;
+      --paper:#ffffff;
+      --card:#fffefe;
+      --border:#e9e6e1;
+      --shadow:0 10px 30px rgba(0,0,0,0.12);
+      --done:#2e7d32;
+      --pending:#c77800;
+    }
+    *{box-sizing:border-box}
+    html,body{
+      margin:0; color:var(--ink);
+      font-family:'Baloo 2', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background:
+        radial-gradient(1200px 400px at 10% -20%, #fff 0%, #fff 35%, var(--sky) 36%),
+        linear-gradient(180deg, #ffffff 0%, #f9f7f4 100%);
+    }
+    header{
+     background-color: #1e90ff; 
+     color:#fff; 
+     padding:28px 20px; 
+     border-radius:0 0 28px 28px;
+     box-shadow: var(--shadow);
+    }
+    .wrap{max-width:1100px; margin:0 auto; padding:16px 20px}
+    h1{margin:0; font-size:clamp(24px,4vw,50px)}
+    .signature{
+      margin-top:8px; font-size:clamp(16px,2.5vw,22px); color:#fff;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.35);
+    }
+    .subtitle{color:#fff; opacity:0.9; margin-top:6px}
+
+    .controls{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px}
+    .controls select, .controls input{
+      padding:10px 12px; border-radius:14px; border:1px solid rgba(255,255,255,0.6);
+      background:#fff; min-width:210px
+    }
+    .controls button{
+      padding:10px 14px; border-radius:14px; border:1px solid rgba(255,255,255,0.7);
+      background:#fff; cursor:pointer
+    }
+    .controls button.primary{background:var(--ocean); color:#fff; border:none}
+    .legend{display:flex; gap:10px; align-items:center; color:#fff; margin-top:12px}
+    .pip{width:10px; height:10px; border-radius:999px; display:inline-block}
+    .pip.red{background:var(--tomato)}
+    .pip.green{background:var(--leaf)}
+    .pip.blue{background:var(--ocean)}
+
+    .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:18px}
+    .card{
+      background:var(--card); border:1px solid var(--border); border-radius:20px;
+      padding:16px; min-height:170px; position:relative; box-shadow:var(--shadow);
+      transition: transform .18s ease;
+    }
+    .card:hover{ transform: translateY(-2px) }
+    .badge{position:absolute; top:12px; right:12px; font-size:12px; padding:6px 8px; border-radius:999px; background:#f7f7f7; border:1px solid var(--border)}
+    .badge.done{background:#e8f5e9; color:var(--done); border-color:#cde7d1}
+    .badge.pending{background:#fff7e6; color:var(--pending); border-color:#ffe3b0}
+    .title{font-weight:700; margin-bottom:6px; font-size:18px}
+    .coltag{font-size:12px; color:var(--muted); margin-bottom:10px}
+    .snippet{color:var(--muted); font-size:14px}
+    .actions{display:flex; gap:8px; margin-top:12px}
+    .btn{padding:8px 10px; border:1px solid var(--border); background:#fff; border-radius:12px; cursor:pointer; font-size:14px}
+    .btn.open{background:var(--ocean); color:#fff; border:none}
+    .btn.toggle{background:#fff}
+
+    footer{padding:24px 20px; color:#666}
+    .print-note{font-size:12px; color:#666}
+
+    dialog{
+      width:min(780px, 92vw); border:none; border-radius:20px; padding:0; box-shadow:0 16px 42px rgba(0,0,0,0.28)
+    }
+    .dlg-head{padding:18px 22px; border-bottom:1px solid var(--border); background:linear-gradient(90deg, #ffffff, #f7fbff)}
+    .dlg-body{padding:18px 22px; background:#fff}
+    .dlg-foot{padding:14px 22px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; background:#fff; border-radius:0 0 20px 20px}
+    .tag{
+      display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#f7fafc; border:1px solid var(--border); font-size:12px; margin-right:6px
+    }
+    .tag.red{background:#fff5f5; color:var(--tomato); border-color:#ffd6d6}
+    .tag.green{background:#f1fbf1; color:var(--leaf); border-color:#d6f3d6}
+    .tag.blue{background:#f2f6ff; color:var(--ocean); border-color:#dbe6ff}
+    .hint{font-size:13px; color:#555; margin-top:6px}
+    .check{display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px dashed var(--border); border-radius:12px; margin-top:12px}
+    .check input{width:18px; height:18px}
+
+    @media (max-width:860px){ .grid{grid-template-columns:1fr 1fr} }
+    @media (max-width:560px){ .grid{grid-template-columns:1fr} }
+    @media print{
+      header,.controls,.actions,.dlg-foot,footer{display:none !important}
+      body{background:#fff}
+      .card{box-shadow:none; border:1px solid #ddd}
+    }
+
+.title-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* titolo a sx, immagine a dx */
+  gap: 20px;
+  padding: 0 40px; /* margine interno per respirare */
+}
+.title-box h1 {
+  margin: 0;
+}
+.title-box img {
+  width: 220px;   /* immagine più grande */
+  height: auto;
+}
+
+</style>
+</head>
+<body>
+  <header>
+    <div class="title-box">
+      <h1>Tic Tac Toe – Giacomo Leopardi</h1>
+      <img src="leopardi.png" alt="Giacomo Leopardi in stile Pixar" width="220">
+      </div>
+      <div class="signature">Professoressa Antonella Magurno</div>
+      <div class="subtitle">Clicca le caselle, leggi le attività e spunta “Completata”. Il progresso resta salvato nel browser.
+</div>
+      <div class="controls" aria-label="Controlli della pagina">
+        <select id="filterCol" aria-label="Filtro colonna">
+          <option value="all">Tutte le colonne</option>
+          <option value="1">Colonna 1 · Testo</option>
+          <option value="2">Colonna 2 · Creativo</option>
+          <option value="3">Colonna 3 · Ricerca</option>
+        </select>
+        <input id="search" type="search" placeholder="Cerca (es. 'Infinito', 'Leopardi', 'Pessimismo')"
+               aria-label="Cerca attività"/>
+        <button class="btn" id="resetProgress">Reset progresso</button>
+        <button class="btn primary" id="print">Stampa/Esporta</button>
+      </div>
+
+      <div class="legend">
+        <span class="pip red"></span> Colonna 1 · Testo
+        <span class="pip green"></span> Colonna 2 · Creativo
+        <span class="pip blue"></span> Colonna 3 · Ricerca
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="grid" class="grid" aria-label="Griglia attività 3x3"></section>
+  </main>
+
+  <footer class="wrap">
+    <div class="print-note">Suggerimento: usa “Stampa/Esporta” per creare un PDF del percorso.</div>
+  </footer>
+
+  <dialog id="dialog">
+    <div class="dlg-head">
+      <h2 id="dlgTitle">Attività</h2>
+      <div id="dlgTags"></div>
+    </div>
+    <div class="dlg-body" id="dlgBody"></div>
+    <div class="dlg-foot">
+      <label class="check"><input type="checkbox" id="dlgDone"/> Segna come completata</label>
+      <button id="dlgClose" class="btn">Chiudi</button>
+    </div>
+  </dialog>
+
+  <script>
+    // 9 attività Tic Tac Toe su Leopardi
+    const data = [
+      {
+        id:1, col:3, title:"Vita di Giacomo Leopardi (linea del tempo)",
+        desc:[
+          "Ricerca e presenta una cronologia della vita di Giacomo Leopardi.",
+          "Crea una linea del tempo con date, luoghi, incontri e opere.",
+          "Evidenzia snodi biografici: Recanati, studi, soggiorni, salute, ultimi anni."
+        ],
+        keywords:["Leopardi","Biografia","Linea del tempo","Recanati"]
+      },
+      {
+  id:2, col:1, title:"Analisi della poesia “L’Infinito”",
+  desc:[
+    "Leggi il testo integrale della poesia “L’Infinito” disponibile qui: <a href='https://www.giacomoleopardi.it/canti/l-infinito/#' target='_blank'>Testo su giacomoleopardi.it</a>.",
+    "Commenta il significato di ‘ermo colle’, siepe e ‘interminati spazi’."
+  ],
+  keywords:["L’Infinito","Analisi","Tema","Struttura"]
+},
+      {
+        id:3, col:3, title:"Elenco delle opere di Leopardi",
+        desc:[
+          "Crea un elenco organizzato delle opere (liriche, prose, Zibaldone, Operette morali).",
+          "Indica datazione e breve nota tematica per ciascuna.",
+          "Opzionale: mappa visiva per periodi e luoghi."
+        ],
+        keywords:["Opere","Zibaldone","Operette morali","Canzoniere"]
+      },
+      {
+        id:4, col:3, title:"Contesto storico e culturale",
+        desc:[
+          "Descrivi il contesto storico-culturale in cui Leopardi vive: fine Settecento – primo Ottocento."
+                  ],
+        keywords:["Contesto","Romanticismo"]
+      },
+      {
+        id:5, col:1, title:"Il pessimismo leopardiano",
+        desc:[
+          "Spiega le differenze tra pessimismo storico e pessimismo cosmico.",
+          "Rifletti sul ruolo della natura."
+        ],
+        keywords:["Pessimismo","Storico","Cosmico","Natura"]
+      },
+      {
+        id:6, col:1, title:"Figure retoriche nella poesia “L’Infinito”",
+        desc:[
+          "Individua le principali figure retoriche (allitterazioni, enjambement, metafore).",
+          "Fai la parafrasi della poesia."
+          ],
+        keywords:["Figure retoriche","Enjambement","Metafora","Allitterazione"]
+      },
+      {
+        id:7, col:2, title:"Attività creativa: voce e immagine",
+        desc:[
+          "Elenca in un ppt le parole che richiamano il senso dell'infinito.",
+          "Cerca immagini che richiamano le parole che hai elencato e crea un'infografica."
+        ],
+        keywords:["Creatività","Video","Infografica","Poster"]
+      },
+      {
+        id:8, col:2, title:"Riscrittura contemporanea",
+        desc:[
+          "Riscrivi “L’Infinito” in 12-14 versi in chiave contemporanea (social, città, tecnologia).",
+          "Mantieni il tema del limite e del desiderio di oltre.",
+          "Se vuoi, usa rime e ritmo libero."
+        ],
+        keywords:["Riscrittura","Versi","Contemporaneo","Rime"]
+      },
+      {
+        id:9, col:2, title:"Laboratorio di citazioni e collegamenti",
+        desc:[
+          "Scegli 3 citazioni di Leopardi e collega ciascuna a un’opera e a un tema.",
+          "Presenta in una mini-slideshow o scheda visuale.",
+          "Concludi con un tuo commento personale."
+        ],
+        keywords:["Citazioni","Collegamenti","Temi","Presentazione"]
+      }
+    ];
+
+    const colMeta = {
+      1:{name:"Esplorazione del Testo", color:"var(--tomato)", tag:"Testo"},
+      2:{name:"Pensiero Creativo", color:"var(--leaf)", tag:"Creativo"},
+      3:{name:"Ricerca e Connessioni", color:"var(--ocean)", tag:"Ricerca"}
+    };
+
+    const grid = document.getElementById('grid');
+    const filterCol = document.getElementById('filterCol');
+    const search = document.getElementById('search');
+    const resetBtn = document.getElementById('resetProgress');
+    const printBtn = document.getElementById('print');
+    const dlg = document.getElementById('dialog');
+    const dlgTitle = document.getElementById('dlgTitle');
+    const dlgTags = document.getElementById('dlgTags');
+    const dlgBody = document.getElementById('dlgBody');
+    const dlgDone = document.getElementById('dlgDone');
+    const dlgClose = document.getElementById('dlgClose');
+
+    const LS_KEY = "leopardi_ttt_progress_v1";
+    const progress = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+    function saveProgress(){ localStorage.setItem(LS_KEY, JSON.stringify(progress)); }
+
+    function render(){
+      grid.innerHTML = "";
+      const q = (search.value || "").toLowerCase();
+      const colFilter = filterCol.value;
+
+      data.forEach(item=>{
+        const matchesCol = colFilter==="all" || String(item.col)===colFilter;
+        const matchesSearch = !q ||
+          item.title.toLowerCase().includes(q) ||
+          item.desc.some(d=>d.toLowerCase().includes(q)) ||
+          item.keywords.some(k=>k.toLowerCase().includes(q));
+        if(!matchesCol || !matchesSearch) return;
+
+        const meta = colMeta[item.col];
+        const card = document.createElement('article');
+        card.className = "card";
+        card.setAttribute('role','button');
+        card.setAttribute('tabindex','0');
+        card.setAttribute('aria-label', item.title);
+
+        const badge = document.createElement('div');
+        const done = !!progress[item.id];
+        badge.className = "badge " + (done ? "done":"pending");
+        badge.textContent = done ? "Completata" : "In corso";
+        card.appendChild(badge);
+
+        const title = document.createElement('div');
+        title.className = "title";
+        title.textContent = `${item.id}. ${item.title}`;
+        card.appendChild(title);
+
+        const coltag = document.createElement('div');
+        coltag.className = "coltag";
+        coltag.innerHTML = `<span style="color:${meta.color}; font-weight:700">●</span> Colonna ${item.col} · ${meta.name}`;
+        card.appendChild(coltag);
+
+        const snippet = document.createElement('div');
+        snippet.className = "snippet";
+        snippet.textContent = item.desc[0];
+        card.appendChild(snippet);
+
+        const actions = document.createElement('div');
+        actions.className = "actions";
+        const openBtn = document.createElement('button');
+        openBtn.className = "btn open";
+        openBtn.textContent = "Apri dettagli";
+        openBtn.addEventListener('click', (e)=>{ e.stopPropagation(); openDialog(item); });
+        const toggleBtn = document.createElement('button');
+        toggleBtn.className = "btn toggle";
+        toggleBtn.textContent = done ? "Segna come in corso":"Segna come completata";
+        toggleBtn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          progress[item.id] = !done;
+          if(!progress[item.id]) delete progress[item.id];
+          saveProgress(); render();
+        });
+
+        actions.appendChild(openBtn);
+        actions.appendChild(toggleBtn);
+        card.appendChild(actions);
+
+        card.addEventListener('click', ()=>openDialog(item));
+        card.addEventListener('keydown', (ev)=>{ if(ev.key==="Enter"||ev.key===" ") openDialog(item); });
+
+        grid.appendChild(card);
+      });
+    }
+
+    function openDialog(item){
+      const meta = colMeta[item.col];
+      dlgTitle.textContent = `${item.id}. ${item.title}`;
+      dlgTags.innerHTML = `
+        <span class="tag ${item.col===1?'red':item.col===2?'green':'blue'}">
+          Colonna ${item.col} · ${meta.name}
+        </span>
+        ${item.keywords.map(k=>`<span class="tag">${k}</span>`).join("")}
+      `;
+      dlgBody.innerHTML = `
+        <p class="hint">Obiettivi e consegne:</p>
+        <ul>
+          ${item.desc.map(d=>`<li>${d}</li>`).join("")}
+        </ul>
+        <p class="hint">Suggerimento: definisci strumenti (Word/Canva, audio/video), fonti e tempi prima di iniziare.</p>
+      `;
+      dlgDone.checked = !!progress[item.id];
+      dlgDone.onchange = ()=>{
+        if(dlgDone.checked){ progress[item.id] = true; } else { delete progress[item.id]; }
+        saveProgress(); render();
+      };
+      dlg.showModal();
+    }
+
+    dlgClose.addEventListener('click', ()=>dlg.close());
+    resetBtn.addEventListener('click', ()=>{
+      if(confirm("Vuoi cancellare il progresso salvato?")) {
+        localStorage.removeItem(LS_KEY);
+        for(const k in progress) delete progress[k];
+        render();
+      }
+    });
+
+    printBtn.addEventListener('click', ()=>window.print());
+    filterCol.addEventListener('change', render);
+    search.addEventListener('input', render);
+
+    render();
+
+    document.addEventListener('keydown', (e)=>{
+      if(e.key==="Escape" && dlg.open) dlg.close();
+    });
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('Service Worker registrato', reg))
+      .catch(err => console.error('Errore Service Worker', err));
+  }
+  </script>
+</body>
+</html>
